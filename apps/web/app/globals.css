@@ -3,10 +3,46 @@
 @tailwind utilities;
 
 :root {
-  --background: #f9fafb;
-  --foreground: #0f172a;
+  --background: 248 70% 99%;
+  --foreground: 222 47% 11%;
 }
 
-html, body {
-  height: 100%;
+html, body { height: 100%; }
+
+/* Fancy animated background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(1200px 600px at 10% 10%, rgba(59,130,246,0.25), transparent 60%),
+              radial-gradient(900px 500px at 90% 20%, rgba(236,72,153,0.25), transparent 60%),
+              radial-gradient(1000px 700px at 50% 100%, rgba(16,185,129,0.25), transparent 60%),
+              linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  filter: blur(0px);
 }
+
+/* Glass panel */
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-xl; /* tailwind */
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(90deg, #3b82f6, #ec4899, #10b981);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Button styles */
+.btn {
+  @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-white shadow-lg transition;
+  background: linear-gradient(135deg, #3b82f6, #ec4899);
+}
+.btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+/* Card styles */
+.card { @apply glass rounded-2xl p-6; }
+.card-title { @apply text-lg font-semibold; }
