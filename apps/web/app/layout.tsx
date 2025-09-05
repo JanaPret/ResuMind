@@ -15,9 +15,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
             <nav className="hidden sm:flex items-center gap-4 text-sm text-gray-600">
-              <a className="hover:text-gray-900" href="#features">Features</a>
-              <a className="hover:text-gray-900" href="#pricing">Pricing</a>
-              <a className="btn" href="#get-started">Get started</a>
+              <a className="hover:text-gray-900" href="/pricing">Pricing</a>
+              <a className="hover:text-gray-900" href="/auth/login">Login</a>
+              <a className="btn" href="/auth/register">Get started</a>
             </nav>
           </header>
           {children}
