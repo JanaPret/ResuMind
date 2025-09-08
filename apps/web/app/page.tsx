@@ -38,12 +38,17 @@ export default function HomePage() {
   const [result, setResult] = useState<TailorResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // ATS state
+  const [atsInput, setAtsInput] = useState('')
+  const [jobInput, setJobInput] = useState('')
+  const [ats, setAts] = useState<{ atsScore: number; readability: number; issues: { missingSections: string[]; keywordGaps: string[] } } | null>(null)
+  const [atsLoading, setAtsLoading] = useState(false)
 
   const onSubmit = async (values: FormValues) => {
     setLoading(true)
     setError(null)
     try {
-  const res = await fetch('/api/tailor', {
+      const res = await fetch('/api/tailor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ masterText: values.masterText, jobText: values.jobText, tone: values.tone }),
@@ -64,6 +69,21 @@ export default function HomePage() {
     if (s >= 60) return 'bg-yellow-500'
     return 'bg-red-500'
   }, [result?.matchScore])
+
+  const runATS = async () => {
+    setAtsLoading(true)
+    try {
+      const res = await fetch('/api/ats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeText: atsInput, jobText: jobInput }),
+      })
+      const data = await res.json()
+      setAts(data)
+    } finally {
+      setAtsLoading(false)
+    }
+  }
 
   return (
     <main className="grid gap-8">
@@ -163,6 +183,56 @@ export default function HomePage() {
           </div>
         </motion.section>
       )}
+
+      {/* ATS Checker */}
+      <section className="card grid gap-4">
+        <h2 className="card-title">ATS Resume Checker</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="grid gap-2">
+            <span className="text-sm font-medium">Resume text</span>
+            <textarea className="h-40 resize-y rounded-xl border border-gray-200 bg-white/70 p-3 outline-none focus:ring-2 focus:ring-blue-500/40" placeholder="Paste your current resume text" value={atsInput} onChange={(e) => setAtsInput(e.target.value)} />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-sm font-medium">Optional job description</span>
+            <textarea className="h-40 resize-y rounded-xl border border-gray-200 bg-white/70 p-3 outline-none focus:ring-2 focus:ring-pink-500/40" placeholder="Paste the target job description (optional)" value={jobInput} onChange={(e) => setJobInput(e.target.value)} />
+          </label>
+        </div>
+        <div>
+          <button className="btn" type="button" onClick={runATS} disabled={atsLoading || atsInput.trim().length < 20}>
+            {atsLoading ? 'Checking…' : 'Run ATS Check'}
+          </button>
+        </div>
+        {ats && (
+          <div className="grid gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-2 w-32 rounded bg-gray-200">
+                <div className="h-2 rounded bg-indigo-500" style={{ width: `${ats.atsScore}%` }} />
+              </div>
+              <span className="text-sm">ATS Score: {ats.atsScore}% • Readability: {ats.readability}%</span>
+            </div>
+            {ats.issues?.missingSections?.length > 0 && (
+              <div>
+                <div className="text-sm font-medium">Missing sections</div>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {ats.issues.missingSections.map((s: string) => (
+                    <span key={s} className="rounded-full bg-yellow-50 px-2 py-1 text-xs text-yellow-900 ring-1 ring-yellow-200">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {ats.issues?.keywordGaps?.length > 0 && (
+              <div>
+                <div className="text-sm font-medium">Missing keywords</div>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {ats.issues.keywordGaps.slice(0, 12).map((k: string) => (
+                    <span key={k} className="rounded-full bg-rose-50 px-2 py-1 text-xs text-rose-900 ring-1 ring-rose-200">{k}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
     </main>
   )
 }

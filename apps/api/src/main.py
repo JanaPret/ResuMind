@@ -1,11 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 import os
 import structlog
 import uuid
 import json
+import re
 
 try:
     from openai import OpenAI  # type: ignore
@@ -75,6 +76,26 @@ class TailorResponse(BaseModel):
     suggestedKeywords: Optional[List[str]] = None
     tailoredCv: TailoredCv
     coverLetter: str
+
+
+# ---- ATS Checker ----
+class ATSIssues(BaseModel):
+    missingSections: List[str] = Field(default_factory=list)
+    keywordGaps: List[str] = Field(default_factory=list)
+    formatWarnings: List[str] = Field(default_factory=list)
+
+
+class ATSCheckRequest(BaseModel):
+    resumeJson: Optional[Dict] = None
+    resumeText: Optional[str] = None
+    jobText: Optional[str] = None
+
+
+class ATSCheckResponse(BaseModel):
+    atsScore: int
+    readability: int
+    issues: ATSIssues
+    missingKeywords: List[str] = Field(default_factory=list)
 
 
 @app.get("/api/v1/health")
@@ -200,4 +221,107 @@ async def tailor(req: TailorRequest):
         suggestedKeywords=["cross-functional", "ownership"],
         tailoredCv=tailored,
         coverLetter=cover,
+    )
+
+
+@app.post("/api/v1/ats/check", response_model=ATSCheckResponse)
+async def ats_check(req: ATSCheckRequest):
+    """Lightweight ATS heuristic: sections presence + keyword coverage + readability."""
+    # Build plain text from provided inputs
+    def normalize_text(s: str) -> str:
+        return re.sub(r"\s+", " ", s or "").strip().lower()
+
+    def tokenize(s: str) -> List[str]:
+        return re.findall(r"[a-zA-Z][a-zA-Z\-\+]{2,}", s.lower())
+
+    resume_text = req.resumeText or ""
+    sections_present = set()
+
+    if req.resumeJson:
+        rj = req.resumeJson or {}
+        parts: List[str] = []
+        summary = rj.get("summary") or rj.get("profile") or ""
+        if summary:
+            parts.append(str(summary))
+            sections_present.add("summary")
+        skills = rj.get("skills") or []
+        if skills:
+            parts.extend([str(x) for x in skills])
+            sections_present.add("skills")
+        exp = rj.get("experience") or []
+        if exp:
+            sections_present.add("experience")
+            for item in exp:
+                parts.append(str(item.get("company", "")))
+                parts.append(str(item.get("title", "")))
+                for b in item.get("bullets", []) or []:
+                    if isinstance(b, dict):
+                        parts.append(str(b.get("text", "")))
+                    else:
+                        parts.append(str(b))
+        edu = rj.get("education") or []
+        if edu:
+            sections_present.add("education")
+            for e in edu:
+                if isinstance(e, dict):
+                    parts.append(str(e.get("school", "")))
+                    parts.append(str(e.get("degree", "")))
+                else:
+                    parts.append(str(e))
+        projects = rj.get("projects") or []
+        if projects:
+            sections_present.add("projects")
+            for p in projects:
+                if isinstance(p, dict):
+                    parts.append(str(p.get("name", "")))
+                    parts.append(str(p.get("description", "")))
+                else:
+                    parts.append(str(p))
+        resume_text = " \n ".join(parts) + (" \n " + resume_text if resume_text else "")
+
+    norm_resume = normalize_text(resume_text)
+    resume_tokens = set(tokenize(norm_resume))
+
+    job_text = req.jobText or ""
+    job_tokens = []
+    if job_text:
+        job_tokens = [t for t in tokenize(job_text) if len(t) > 3]
+    job_set = set(job_tokens)
+
+    # Keyword coverage
+    covered = len(job_set & resume_tokens)
+    needed = len(job_set)
+    coverage = (covered / needed) if needed else 0.0
+
+    # Sections issues
+    expected = {"summary", "skills", "experience"}
+    missing_sections = sorted(list(expected - sections_present))
+
+    # Readability approximation (shorter sentences generally easier)
+    sentences = re.split(r"[\.!?]+\s+", resume_text.strip()) if resume_text.strip() else []
+    words = tokenize(resume_text)
+    avg_sent_len = (len(words) / max(1, len(sentences))) if sentences else len(words)
+    readability = max(0, min(100, int(100 - min(60, avg_sent_len * 2))))
+
+    # Score out of 100: base + sections + keyword coverage + readability contribution
+    score = 50
+    score += 10 * (3 - len(missing_sections))  # up to +30
+    score += int(coverage * 15)  # up to +15 for keywords
+    score += int((readability / 100) * 5)  # up to +5
+    score = max(0, min(100, score))
+
+    # Gaps
+    keyword_gaps = sorted(list(job_set - resume_tokens))[:20]
+
+    issues = ATSIssues(
+        missingSections=missing_sections,
+        keywordGaps=keyword_gaps,
+        formatWarnings=[],
+    )
+
+    return ATSCheckResponse(
+        atsScore=score,
+        readability=readability,
+        issues=issues,
+        missingKeywords=keyword_gaps,
     )

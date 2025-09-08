@@ -10,7 +10,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 via-pink-500 to-emerald-500 shadow-lg" />
               <div>
-                <div className="text-2xl font-extrabold gradient-text tracking-tight">Resumind</div>
+                <a href="/" aria-label="Go to homepage" className="text-2xl font-extrabold gradient-text tracking-tight inline-block">
+                  Resumind
+                </a>
                 <div className="text-xs text-gray-500">Tailor your résumé and cover letter in seconds</div>
               </div>
             </div>
