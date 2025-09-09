@@ -13,11 +13,23 @@
   --secondary: 215 38% 31%; /* #324b6e */
   --accent: 215 37% 41%;    /* #426391 */
 
+  /* Complimentary bright secondary highlight (mint aqua) */
+  /* Base #A3F8EB -> HSL ~171 86% 81% */
+  --highlight: 171 86% 81%;          /* #A3F8EB */
+  --highlight-strong: 171 70% 55%;   /* deeper mint (~#3CDCC4) */
+  --highlight-faint: 171 65% 92%;    /* very light mint wash */
+
   /* Neutral/muted */
   --muted: 0 0% 90%;        /* #e6e6e6 */
 }
 
 html, body { height: 100%; }
+
+/* Keyframes */
+@keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes float-slow { 0% { transform: translateY(0px); } 50% { transform: translateY(-6px); } 100% { transform: translateY(0px);} }
+@keyframes shimmer { 0% { opacity: .2; transform: translateX(-20%);} 50% { opacity:.55;} 100% { opacity:0; transform: translateX(120%);} }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 hsl(var(--highlight) / .55), 0 0 0 0 hsl(var(--highlight-strong) / .25);} 80% { box-shadow: 0 0 0 18px hsl(var(--highlight) / 0); } 100% { box-shadow:0 0 0 0 hsl(var(--highlight) / 0);} }
 
 /* Fancy animated background */
 body::before {
@@ -25,11 +37,19 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(1200px 600px at 10% 10%, hsl(var(--primary) / 0.25), transparent 60%),
-              radial-gradient(900px 500px at 90% 20%, hsl(var(--secondary) / 0.25), transparent 60%),
-              radial-gradient(1000px 700px at 50% 100%, hsl(var(--accent) / 0.25), transparent 60%),
-              linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  background: radial-gradient(1100px 520px at 12% 12%, hsl(var(--primary) / 0.22), transparent 62%),
+              radial-gradient(880px 480px at 88% 18%, hsl(var(--secondary) / 0.20), transparent 63%),
+              radial-gradient(1400px 900px at 50% 100%, hsl(var(--highlight-faint) / 0.85), transparent 75%),
+              linear-gradient(180deg, #ffffff 0%, #fbfcfc 40%, #f6fefe 100%);
   filter: blur(0px);
+}
+
+body::after {
+  content:"";
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(900px 600px at 70% 85%, hsl(var(--highlight) / 0.35), transparent 70%);
+  mix-blend-mode:overlay;
+  opacity:.6;
 }
 
 /* Glass panel */
@@ -39,7 +59,7 @@ body::before {
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)));
+  background: linear-gradient(100deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)), hsl(var(--highlight)));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -48,7 +68,7 @@ body::before {
 /* Button styles */
 .btn {
   @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-white shadow-lg transition;
-  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)));
 }
 .btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
@@ -56,3 +76,75 @@ body::before {
 /* Card styles */
 .card { @apply glass rounded-2xl p-6; }
 .card-title { @apply text-lg font-semibold; }
+
+/* Highlight utility classes */
+.highlight-ring {
+  box-shadow: 0 0 0 2px hsl(var(--highlight-strong) / 0.55), 0 4px 14px -4px hsl(var(--highlight-strong) / 0.35), 0 0 30px -8px hsl(var(--highlight) / 0.9);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, hsl(var(--highlight-faint) / 0.6), hsl(var(--background)) 30% 70%);
+}
+
+.badge-highlight {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide;
+  background: hsl(var(--highlight));
+  color: hsl(var(--primary));
+  box-shadow: 0 0 0 1px hsl(var(--highlight-strong) / 0.45), 0 2px 6px -1px hsl(var(--highlight-strong) / 0.35);
+}
+
+.btn-highlight {
+  @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium shadow-lg transition;
+  background: linear-gradient(135deg, hsl(var(--highlight)), hsl(var(--highlight-strong)));
+  color: hsl(var(--foreground));
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+}
+.btn-highlight:hover { filter: brightness(1.04); }
+.btn-highlight:active { filter: brightness(0.96); }
+
+/* Primary CTA variant mixing brand blues + mint accent */
+.btn-cta {
+  @apply inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold shadow-lg transition;
+  background: linear-gradient(100deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--highlight-strong)) 92%);
+  color: #fff;
+  position: relative;
+}
+.btn-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px hsl(var(--highlight-strong) / 0.55), 0 0 0 4px hsl(var(--highlight) / 0.25);
+  mix-blend-mode: normal;
+  pointer-events: none;
+}
+.btn-cta:hover { filter: brightness(1.05); }
+.btn-cta:active { filter: brightness(0.96); }
+.btn-cta.pulse { animation: pulse-ring 4s ease-in-out infinite; }
+
+/* Card interaction */
+.card-interactive { transition: transform .45s cubic-bezier(.16,.8,.26,1), box-shadow .4s, background .6s; position:relative; }
+.card-interactive:hover { transform: translateY(-6px); box-shadow:0 20px 40px -18px rgba(0,0,0,.25), 0 8px 18px -6px rgba(0,0,0,.18); }
+.card-interactive::before { content:""; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(140deg, hsl(var(--highlight) / 0.25), transparent 40%); opacity:0; transition:opacity .6s; }
+.card-interactive:hover::before { opacity:1; }
+
+/* Gradient border utility */
+.gradient-border { position:relative; }
+.gradient-border::before { content:""; position:absolute; inset:0; padding:1px; border-radius:inherit; background:linear-gradient(120deg, hsl(var(--highlight)), hsl(var(--accent)) 45%, hsl(var(--secondary))); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+
+/* Section heading underline */
+.heading-underline { position:relative; display:inline-block; }
+.heading-underline::after { content:""; position:absolute; left:0; bottom:-10px; height:6px; width:100%; background:linear-gradient(90deg, hsl(var(--highlight)), hsl(var(--highlight-strong))); filter:blur(8px); opacity:.25; }
+
+/* Subtle reveal (supports JS intersection adding .revealed) */
+.reveal { opacity:0; transform:translateY(24px); transition: opacity .8s ease, transform .8s ease; }
+.reveal.revealed { opacity:1; transform:translateY(0); }
+
+/* Floating badge animation */
+.badge-highlight.float { animation: float-slow 6s ease-in-out infinite; }
+
+/* Animated shimmer overlay utility (wrap in relative parent) */
+.shimmer::after { content:""; position:absolute; top:0; left:-30%; width:30%; height:100%; background:linear-gradient(75deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 45%, rgba(255,255,255,0) 100%); animation: shimmer 4.8s ease-in-out infinite; }
+
+
+/* Focus accessibility helper */
+.focusable { outline: none; }
+.focusable:focus-visible { box-shadow: 0 0 0 2px #fff, 0 0 0 5px hsl(var(--highlight-strong)); border-radius: 8px; }

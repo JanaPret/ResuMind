@@ -7,14 +7,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen antialiased" style={{ color: 'hsl(var(--foreground))' }}>
         <div className="min-h-screen flex flex-col">
           <header
-            className="shadow-lg"
+            className="shadow-lg relative overflow-hidden"
             style={{
-              background: 'linear-gradient(90deg, #23344b 0%, #576476 100%)',
+              background: 'linear-gradient(115deg,#23344b 0%,#324b6e 38%,#576476 62%, hsl(var(--highlight-strong)) 115%)',
+              backgroundSize: '220% 220%',
+              animation: 'gradient-shift 18s ease-in-out infinite',
               color: 'white',
               borderBottom: '1px solid hsl(var(--accent) / 0.2)'
             }}
           >
-            <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-6 gap-8 h-[260px]">
+            <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-6 gap-8 h-[260px] reveal revealed">
               <a href="/" aria-label="Go to homepage" className="flex items-center">
                 <img
                   src="/Resumind_JustTexrt_logo.svg"
@@ -26,15 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 />
               </a>
               <nav className="flex items-center gap-6 text-base">
-                <a className="text-white/80 hover:text-white" href="/pricing">Pricing</a>
-                <a className="text-white/80 hover:text-white" href="/auth/login">Login</a>
-                <a
-                  href="/auth/register"
-                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[15px] font-semibold shadow-lg transition"
-                  style={{ backgroundColor: 'white', color: '#23344b' }}
-                >
-                  Get started
-                </a>
+                <a className="text-white/80 hover:text-white focusable" href="/pricing">Pricing</a>
+                <a className="text-white/80 hover:text-white focusable" href="/auth/login">Login</a>
+                <a href="/auth/register" className="btn-cta pulse text-[15px] focusable">Get started</a>
               </nav>
             </div>
           </header>
